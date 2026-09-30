@@ -39,6 +39,29 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const highScoreEl = document.getElementById('highscore');
+const overlayRecord = document.getElementById('overlay-record');
+
+const HIGHSCORE_KEY = 'tetris-highscore';
+
+function loadHighScore() {
+  try {
+    const v = parseInt(localStorage.getItem(HIGHSCORE_KEY), 10);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function saveHighScore(value) {
+  try {
+    localStorage.setItem(HIGHSCORE_KEY, String(value));
+  } catch (e) {
+    // localStorage no disponible: el récord solo dura la sesión
+  }
+}
+
+let highScore = loadHighScore();
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -154,6 +177,7 @@ function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
   linesEl.textContent = lines;
   levelEl.textContent = level;
+  highScoreEl.textContent = Math.max(highScore, score).toLocaleString();
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
@@ -223,6 +247,15 @@ function endGame() {
   cancelAnimationFrame(animId);
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+  const isNewRecord = score > highScore;
+  if (isNewRecord) {
+    highScore = score;
+    saveHighScore(highScore);
+  }
+  overlayRecord.textContent = isNewRecord
+    ? '¡Nuevo récord!'
+    : `Récord: ${highScore.toLocaleString()}`;
+  updateHUD();
   overlay.classList.remove('hidden');
 }
 
@@ -236,6 +269,7 @@ function togglePause() {
     cancelAnimationFrame(animId);
     overlayTitle.textContent = 'PAUSA';
     overlayScore.textContent = '';
+    overlayRecord.textContent = '';
     overlay.classList.remove('hidden');
   }
 }
